@@ -78,19 +78,43 @@ class NutritionAnalysis(BaseModel):
     fibre_g: float
     items: List[dict]  # [{name, portion, calories}, ...]
 
+# Exercise Set schemas
+class ExerciseSetBase(BaseModel):
+    set_number: int
+    reps: int
+    weight_kg: Optional[float] = None
+    rest_seconds: Optional[int] = None
+    rpe: Optional[int] = None  # Rate of Perceived Exertion 1-10
+    completed: bool = True
+    notes: Optional[str] = None
+
+class ExerciseSetCreate(ExerciseSetBase):
+    pass
+
+class ExerciseSet(ExerciseSetBase):
+    id: int
+    exercise_id: int
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True
+
 # Exercise schemas
 class ExerciseBase(BaseModel):
     name: str
-    sets: int
-    reps: int
-    weight_kg: Optional[float] = None
+    muscle_group: Optional[str] = None
+    exercise_order: int = 0
+    target_sets: Optional[int] = None
+    target_reps: Optional[int] = None
+    notes: Optional[str] = None
 
 class ExerciseCreate(ExerciseBase):
-    pass
+    sets: List[ExerciseSetCreate] = []
 
 class Exercise(ExerciseBase):
     id: int
     workout_id: int
+    sets: List[ExerciseSet] = []
     
     class Config:
         from_attributes = True
@@ -98,8 +122,12 @@ class Exercise(ExerciseBase):
 # Workout schemas
 class WorkoutBase(BaseModel):
     date: str  # YYYY-MM-DD
-    type: str  # muay_thai, weightlifting, cardio
+    start_time: Optional[str] = None  # HH:MM
+    end_time: Optional[str] = None    # HH:MM
+    type: str  # muay_thai, weightlifting, cardio, flexibility, sports
     duration_minutes: int
+    intensity: Optional[str] = None   # light, moderate, intense, max
+    location: Optional[str] = None    # gym, home, park
     notes: Optional[str] = None
 
 class WorkoutCreate(WorkoutBase):

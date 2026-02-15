@@ -194,9 +194,22 @@ const Dashboard = () => {
                   <div>
                     <p className="font-medium text-gray-900 capitalize">
                       {workout.type.replace('_', ' ')}
+                      {workout.intensity && (
+                        <span className={`ml-2 text-xs px-2 py-1 rounded ${
+                          workout.intensity === 'light' ? 'bg-green-100 text-green-700' :
+                          workout.intensity === 'moderate' ? 'bg-yellow-100 text-yellow-700' :
+                          workout.intensity === 'intense' ? 'bg-orange-100 text-orange-700' :
+                          workout.intensity === 'max' ? 'bg-red-100 text-red-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {workout.intensity}
+                        </span>
+                      )}
                     </p>
                     <p className="text-sm text-gray-500">
                       {formatDate(workout.date, 'MMM d')}
+                      {workout.start_time && <span> • {formatTime(workout.start_time)}</span>}
+                      {workout.location && <span> • {workout.location}</span>}
                     </p>
                   </div>
                 </div>
@@ -206,6 +219,7 @@ const Dashboard = () => {
                   </p>
                   <p className="text-xs text-gray-500">
                     {workout.exercises_count} exercises
+                    {workout.total_sets && <span> • {workout.total_sets} sets</span>}
                   </p>
                 </div>
               </div>

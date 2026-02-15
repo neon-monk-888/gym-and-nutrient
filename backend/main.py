@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from database import SessionLocal, engine, init_db
-from models import Base, Profile, Meal, MealItem, Workout, Exercise, WeighIn
+from models import Base, Profile, Meal, MealItem, Workout, Exercise, ExerciseSet, WeighIn
 import schemas
 from ai_analysis import meal_analyzer
 from utils import (
@@ -224,27 +224,48 @@ def delete_meal(meal_id: int, db: Session = Depends(get_db)):
 # Workout endpoints
 @app.post("/workouts", response_model=schemas.Workout)
 def create_workout(workout: schemas.WorkoutCreate, db: Session = Depends(get_db)):
-    """Create a new workout"""
+    """Create a new workout with detailed exercise tracking"""
     db_workout = Workout(
         date=workout.date,
+        start_time=workout.start_time,
+        end_time=workout.end_time,
         type=workout.type,
         duration_minutes=workout.duration_minutes,
+        intensity=workout.intensity,
+        location=workout.location,
         notes=workout.notes
     )
     
     db.add(db_workout)
     db.flush()
     
-    # Add exercises
+    # Add exercises with sets
     for exercise_data in workout.exercises:
         exercise = Exercise(
             workout_id=db_workout.id,
             name=exercise_data.name,
-            sets=exercise_data.sets,
-            reps=exercise_data.reps,
-            weight_kg=exercise_data.weight_kg
+            muscle_group=exercise_data.muscle_group,
+            exercise_order=exercise_data.exercise_order,
+            target_sets=exercise_data.target_sets,
+            target_reps=exercise_data.target_reps,
+            notes=exercise_data.notes
         )
         db.add(exercise)
+        db.flush()
+        
+        # Add individual sets
+        for set_data in exercise_data.sets:
+            exercise_set = ExerciseSet(
+                exercise_id=exercise.id,
+                set_number=set_data.set_number,
+                reps=set_data.reps,
+                weight_kg=set_data.weight_kg,
+                rest_seconds=set_data.rest_seconds,
+                rpe=set_data.rpe,
+                completed=set_data.completed,
+                notes=set_data.notes
+            )
+            db.add(exercise_set)
     
     db.commit()
     db.refresh(db_workout)
@@ -265,8 +286,148 @@ def get_workouts(
         start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
         query = query.filter(Workout.date >= start_date)
     
-    workouts = query.order_by(Workout.date.desc()).all()
+    workouts = query.order_by(Workout.date.desc(), Workout.start_time.desc()).all()
     return workouts
+
+@app.get("/workouts/{workout_id}", response_model=schemas.Workout)
+def get_workout(workout_id: int, db: Session = Depends(get_db)):
+    """Get detailed workout by ID"""
+    workout = db.query(Workout).filter(Workout.id == workout_id).first()
+    if not workout:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    return workout
+
+@app.delete("/workouts/{workout_id}")
+def delete_workout(workout_id: int, db: Session = Depends(get_db)):
+    """Delete a workout and all its exercises/sets"""
+    workout = db.query(Workout).filter(Workout.id == workout_id).first()
+    if not workout:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    
+    db.delete(workout)
+    db.commit()
+    return {"message": "Workout deleted"}
+
+@app.get("/workouts/stats/summary")
+def get_workout_stats(days: int = 30, db: Session = Depends(get_db)):
+    """Get workout statistics and trends"""
+    cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    
+    # Get recent workouts
+    workouts = db.query(Workout).filter(
+        Workout.date >= cutoff_date
+    ).order_by(Workout.date.desc()).all()
+    
+    # Calculate stats
+    total_workouts = len(workouts)
+    total_duration = sum(w.duration_minutes for w in workouts)
+    
+    # Group by workout type
+    type_counts = {}
+    type_duration = {}
+    intensity_counts = {}
+    
+    for workout in workouts:
+        # Type stats
+        if workout.type not in type_counts:
+            type_counts[workout.type] = 0
+            type_duration[workout.type] = 0
+        type_counts[workout.type] += 1
+        type_duration[workout.type] += workout.duration_minutes
+        
+        # Intensity stats
+        if workout.intensity:
+            if workout.intensity not in intensity_counts:
+                intensity_counts[workout.intensity] = 0
+            intensity_counts[workout.intensity] += 1
+    
+    # Get exercise frequency (most common exercises)
+    exercise_counts = {}
+    total_sets = 0
+    total_volume = 0  # weight * reps
+    
+    for workout in workouts:
+        for exercise in workout.exercises:
+            if exercise.name not in exercise_counts:
+                exercise_counts[exercise.name] = 0
+            exercise_counts[exercise.name] += 1
+            
+            for exercise_set in exercise.sets:
+                total_sets += 1
+                if exercise_set.weight_kg:
+                    total_volume += exercise_set.weight_kg * exercise_set.reps
+    
+    # Sort exercises by frequency
+    top_exercises = sorted(exercise_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    return {
+        "period_days": days,
+        "total_workouts": total_workouts,
+        "total_duration_minutes": total_duration,
+        "avg_duration_minutes": total_duration / max(1, total_workouts),
+        "workouts_per_week": (total_workouts / max(1, days)) * 7,
+        "workout_types": type_counts,
+        "type_duration": type_duration,
+        "intensity_breakdown": intensity_counts,
+        "total_sets": total_sets,
+        "total_volume_kg": total_volume,
+        "top_exercises": top_exercises,
+        "recent_workouts": [
+            {
+                "id": w.id,
+                "date": w.date,
+                "type": w.type,
+                "duration": w.duration_minutes,
+                "intensity": w.intensity,
+                "exercise_count": len(w.exercises)
+            } for w in workouts[:5]
+        ]
+    }
+
+@app.get("/exercises/library")
+def get_exercise_library():
+    """Get common exercises organized by muscle group"""
+    return {
+        "chest": [
+            "Bench Press", "Incline Bench Press", "Decline Bench Press", 
+            "Dumbbell Press", "Incline Dumbbell Press", "Chest Flyes",
+            "Push-ups", "Chest Dips", "Cable Crossover"
+        ],
+        "back": [
+            "Pull-ups", "Chin-ups", "Lat Pulldown", "Seated Row",
+            "Bent-over Row", "T-Bar Row", "Deadlift", "Hyperextensions",
+            "Face Pulls", "Reverse Flyes"
+        ],
+        "legs": [
+            "Squats", "Front Squats", "Leg Press", "Romanian Deadlift",
+            "Leg Curls", "Leg Extensions", "Calf Raises", "Lunges",
+            "Bulgarian Split Squats", "Hip Thrusts"
+        ],
+        "shoulders": [
+            "Overhead Press", "Dumbbell Press", "Lateral Raises",
+            "Front Raises", "Rear Delt Flyes", "Arnold Press",
+            "Upright Rows", "Pike Push-ups", "Handstand Push-ups"
+        ],
+        "arms": [
+            "Bicep Curls", "Hammer Curls", "Tricep Dips", "Close-grip Bench",
+            "Tricep Extensions", "Cable Curls", "Preacher Curls",
+            "Diamond Push-ups", "21s", "Concentration Curls"
+        ],
+        "core": [
+            "Planks", "Side Planks", "Crunches", "Bicycle Crunches",
+            "Russian Twists", "Leg Raises", "Dead Bug", "Mountain Climbers",
+            "Hollow Body Hold", "V-ups"
+        ],
+        "cardio": [
+            "Running", "Cycling", "Rowing", "Jump Rope", "Burpees",
+            "High Knees", "Jumping Jacks", "Stair Climbing", "Swimming"
+        ],
+        "muay_thai": [
+            "Jab", "Cross", "Hook", "Uppercut", "Knee Strike", 
+            "Front Kick", "Roundhouse Kick", "Elbow Strike",
+            "Clinch Work", "Pad Work", "Heavy Bag", "Shadow Boxing"
+        ]
+    }
 
 # Weight tracking endpoints
 @app.post("/weigh-ins", response_model=schemas.WeighIn)

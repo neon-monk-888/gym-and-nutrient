@@ -46,8 +46,11 @@ export const mealsApi = {
 // Workouts API
 export const workoutsApi = {
   getByRange: (range = 'week') => api.get(`/workouts?range=${range}`),
+  getById: (id) => api.get(`/workouts/${id}`),
   create: (data) => api.post('/workouts', data),
-  delete: (id) => api.delete(`/workouts/${id}`)
+  delete: (id) => api.delete(`/workouts/${id}`),
+  getStats: (days = 30) => api.get(`/workouts/stats/summary?days=${days}`),
+  getExerciseLibrary: () => api.get('/exercises/library')
 }
 
 // Weight API
