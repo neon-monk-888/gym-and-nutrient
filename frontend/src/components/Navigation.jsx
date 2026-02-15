@@ -27,7 +27,7 @@ const Navigation = () => {
             <Link to="/" className="flex items-center">
               <FireIcon className="h-8 w-8 text-primary-600" />
               <span className="ml-2 text-xl font-bold text-gray-900">
-                Gym & Nutrient
+                Gym and Food Log
               </span>
             </Link>
           </div>

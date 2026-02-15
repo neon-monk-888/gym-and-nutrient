@@ -23,7 +23,7 @@ from utils import (
 # Create tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Gym & Nutrient Tracker", version="1.0.0")
+app = FastAPI(title="Gym and Food Log", version="1.0.0")
 
 # CORS middleware
 app.add_middleware(

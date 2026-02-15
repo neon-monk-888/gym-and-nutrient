@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Backup script for Gym & Nutrient Tracker
+Backup script for Gym and Food Log
 Creates a timestamped tar archive of the entire /data directory
 """
 
@@ -10,7 +10,7 @@ import shutil
 from datetime import datetime
 import argparse
 
-def create_backup(output_dir="/tmp", prefix="gym-nutrient-backup"):
+def create_backup(output_dir="/tmp", prefix="gym-food-log-backup"):
     """Create a backup of the data directory"""
     
     # Data directory
@@ -99,7 +99,7 @@ def list_contents(backup_path):
         print(f"❌ Failed to list contents: {e}")
         return False
 
-def cleanup_old_backups(backup_dir="/tmp", prefix="gym-nutrient-backup", keep_count=5):
+def cleanup_old_backups(backup_dir="/tmp", prefix="gym-food-log-backup", keep_count=5):
     """Remove old backup files, keeping only the most recent ones"""
     
     try:
@@ -128,7 +128,7 @@ def cleanup_old_backups(backup_dir="/tmp", prefix="gym-nutrient-backup", keep_co
         return False
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Backup/restore Gym & Nutrient Tracker data")
+    parser = argparse.ArgumentParser(description="Backup/restore Gym and Food Log data")
     parser.add_argument("action", choices=["backup", "restore", "list", "cleanup"], 
                        help="Action to perform")
     parser.add_argument("--file", "-f", help="Backup file path (for restore/list)")

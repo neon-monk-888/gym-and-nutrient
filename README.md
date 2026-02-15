@@ -1,4 +1,4 @@
-# Gym & Nutrient Tracker
+# Gym and Food Log
 
 Personal gym and nutrition tracking app for vegetarian bulking. Zero cloud dependencies, all data stored locally.
 
@@ -47,3 +47,7 @@ tar -czf backup-$(date +%Y%m%d).tar.gz data/
 - Deploy: Docker Compose + Caddy
 
 Zero running costs locally, under £5/month on VPS.
+
+## Renamed App
+
+This app is now called "Gym and Food Log" - a personal fitness and nutrition tracker.

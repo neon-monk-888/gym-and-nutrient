@@ -346,7 +346,7 @@ const Profile = () => {
         
         <div className="mt-4 pt-4 border-t border-gray-200">
           <p className="text-xs text-gray-500">
-            Gym & Nutrient Tracker v1.0.0
+            Gym and Food Log v1.0.0
             <br />
             Built with FastAPI + React + SQLite
           </p>

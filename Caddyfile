@@ -1,4 +1,4 @@
-# Caddy configuration for Gym & Nutrient Tracker
+# Caddy configuration for Gym and Food Log
 # Replace yourdomain.com with your actual domain
 
 {$DOMAIN:localhost} {
