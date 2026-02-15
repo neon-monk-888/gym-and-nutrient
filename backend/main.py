@@ -20,8 +20,13 @@ from utils import (
     get_weekly_summary
 )
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+# Initialize database
+try:
+    Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created/verified")
+except Exception as e:
+    print(f"⚠️ Database initialization warning: {e}")
+    # Continue anyway - tables might already exist
 
 app = FastAPI(title="Gym and Food Log", version="1.0.0")
 

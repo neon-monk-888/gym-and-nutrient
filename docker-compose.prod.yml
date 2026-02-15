@@ -12,6 +12,8 @@ services:
       - DATABASE_URL=sqlite:////data/bulkup.db
       - PHOTOS_DIR=/data/photos
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PYTHONWARNINGS=ignore::DeprecationWarning
+      - SQLALCHEMY_WARN_20=0
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

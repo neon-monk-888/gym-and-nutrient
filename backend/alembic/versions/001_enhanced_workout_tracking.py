@@ -7,6 +7,7 @@ Create Date: 2024-01-21 12:00:00.000000
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import sqlite
 
 # revision identifiers, used by Alembic.
 revision = '001'
@@ -43,7 +44,7 @@ def upgrade() -> None:
         sa.Column('weight_kg', sa.Float(), nullable=True),
         sa.Column('rest_seconds', sa.Integer(), nullable=True),
         sa.Column('rpe', sa.Integer(), nullable=True),
-        sa.Column('completed', sa.Boolean(), nullable=True),
+        sa.Column('completed', sa.Boolean(), nullable=True, default=True),
         sa.Column('notes', sa.Text(), nullable=True),
         sa.Column('timestamp', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
         sa.ForeignKeyConstraint(['exercise_id'], ['exercises.id'], ),

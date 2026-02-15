@@ -13,6 +13,10 @@ COPY . .
 
 RUN mkdir -p /data/photos
 
+# Make scripts executable
+RUN chmod +x init_db.py migrate.py
+
 EXPOSE 8000
 
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Initialize database and start server
+CMD ["sh", "-c", "python init_db.py && python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"]
