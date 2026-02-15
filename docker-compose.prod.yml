@@ -1,0 +1,52 @@
+# Production deployment with Caddy reverse proxy
+version: '3.8'
+
+services:
+  api:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - app_data:/data
+    environment:
+      - DATABASE_URL=sqlite:////data/bulkup.db
+      - PHOTOS_DIR=/data/photos
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    restart: unless-stopped
+    depends_on:
+      - api
+      - frontend
+
+volumes:
+  app_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local

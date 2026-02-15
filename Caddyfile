@@ -1,0 +1,42 @@
+# Caddy configuration for Gym & Nutrient Tracker
+# Replace yourdomain.com with your actual domain
+
+{$DOMAIN:localhost} {
+    # API routes
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+    
+    # Photo serving
+    handle /photos/* {
+        reverse_proxy api:8000
+    }
+    
+    # Frontend routes (React Router)
+    handle /* {
+        reverse_proxy frontend:80
+    }
+    
+    # Enable gzip compression
+    encode gzip
+    
+    # Security headers
+    header {
+        # Prevent XSS attacks
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        X-XSS-Protection "1; mode=block"
+        
+        # Only allow HTTPS connections
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        
+        # Don't send referrer to other domains
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+    
+    # Log requests
+    log {
+        output file /var/log/caddy/access.log
+        format console
+    }
+}
